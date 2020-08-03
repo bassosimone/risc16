@@ -415,7 +415,7 @@ func ParseSPACE(in <-chan LexerToken, label *string, lineno int) (out []Instruct
 	return
 }
 
-// ParseRegisterOrComma parses a register ignoring a comma
+// MaybeSkipCommaThenParseRegister parses a register ignoring a comma
 // that may or may not appear before the register.
 func MaybeSkipCommaThenParseRegister(in <-chan LexerToken) (uint16, error) {
 	token := <-in
@@ -444,7 +444,7 @@ func MaybeSkipCommaThenParseRegister(in <-chan LexerToken) (uint16, error) {
 	}
 }
 
-// ParseImmediateOrComma parses an immediate ignoring a comma
+// MaybeSkipCommaThenParseImmediate parses an immediate ignoring a comma
 // that may or may not appear before the register.
 func MaybeSkipCommaThenParseImmediate(in <-chan LexerToken) (string, error) {
 	token := <-in

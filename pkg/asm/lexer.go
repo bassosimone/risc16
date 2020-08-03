@@ -37,7 +37,7 @@ var LexerRules = []LexerRule{{
 	Type: LexerLabel,
 }, {
 	Emit: true,
-	RE:   regexp.MustCompile(`^[.a-zA-Z_][a-zA-Z0-9]*`),
+	RE:   regexp.MustCompile(`^[.a-zA-Z_][a-zA-Z0-9_]*`),
 	Type: LexerNameOrNumber,
 }, {
 	Emit: true,

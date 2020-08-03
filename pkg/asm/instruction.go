@@ -2,6 +2,7 @@ package asm
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -156,7 +157,7 @@ func (ia InstructionADDI) Encode(labels map[string]int64) (uint16, error) {
 	out |= (OpcodeADDI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RB & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 7)
+	imm, err := ResolveImmediate(labels, ia.Imm, 7, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -230,7 +231,7 @@ func (ia InstructionLUI) Encode(labels map[string]int64) (uint16, error) {
 	var out uint16
 	out |= (OpcodeLUI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
-	imm, err := ResolveImmediate(labels, ia.Imm, 16)
+	imm, err := ResolveImmediate(labels, ia.Imm, 16, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -270,7 +271,7 @@ func (ia InstructionSW) Encode(labels map[string]int64) (uint16, error) {
 	out |= (OpcodeSW & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RB & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 7)
+	imm, err := ResolveImmediate(labels, ia.Imm, 7, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -310,7 +311,7 @@ func (ia InstructionLW) Encode(labels map[string]int64) (uint16, error) {
 	out |= (OpcodeLW & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RB & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 7)
+	imm, err := ResolveImmediate(labels, ia.Imm, 7, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -350,7 +351,7 @@ func (ia InstructionBEQ) Encode(labels map[string]int64) (uint16, error) {
 	out |= (OpcodeBEQ & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RB & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 7)
+	imm, err := ResolveImmediate(labels, ia.Imm, 7, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -425,7 +426,7 @@ func (ia InstructionLLI) Encode(labels map[string]int64) (uint16, error) {
 	out |= (OpcodeADDI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RA & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 16)
+	imm, err := ResolveImmediate(labels, ia.Imm, 16, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
@@ -465,7 +466,8 @@ func (ia InstructionDATA) Encode(labels map[string]int64) (uint16, error) {
 var _ Instruction = InstructionDATA{}
 
 // ResolveImmediate resolves the value of an immediate
-func ResolveImmediate(labels map[string]int64, name string, bits int) (uint16, error) {
+func ResolveImmediate(
+	labels map[string]int64, name string, bits, lineno int) (uint16, error) {
 	if bits < 1 || bits > 16 {
 		panic("bits value out of range")
 	}
@@ -478,9 +480,9 @@ func ResolveImmediate(labels map[string]int64, name string, bits int) (uint16, e
 		}
 		// fallthrough
 	}
-	var mask int64 = (1 << bits) - 1
-	if (value & ^mask) != 0 {
-		return 0, fmt.Errorf("%w for immediate '%s'", ErrOutOrRange, name)
+	if value < -(1<<(bits-1)) || value > ((1<<(bits-1))-1) {
+		log.Printf(
+			"warning: value out of %d-bit range for '%s' on line %d", bits, name, lineno)
 	}
-	return uint16(value & mask), nil
+	return uint16(value), nil
 }

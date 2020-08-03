@@ -54,7 +54,7 @@ type Instruction interface {
 
 	// Encode encodes the instruction. The table passed in input maps each
 	// label to the corresponding offset in memory.
-	Encode(labels map[string]int64) (uint16, error)
+	Encode(labels map[string]int64, pc uint16) (uint16, error)
 }
 
 // InstructionErr is an error
@@ -79,7 +79,7 @@ func (ia InstructionErr) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionErr) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionErr) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	return 0, fmt.Errorf("%w because this is an error", ErrCannotEncode)
 }
 
@@ -116,7 +116,7 @@ func (ia InstructionADD) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionADD) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionADD) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeADD & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -152,7 +152,7 @@ func (ia InstructionADDI) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionADDI) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionADDI) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeADDI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -192,7 +192,7 @@ func (ia InstructionNAND) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionNAND) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionNAND) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeNAND & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -227,7 +227,7 @@ func (ia InstructionLUI) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionLUI) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionLUI) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeLUI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -266,7 +266,7 @@ func (ia InstructionSW) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionSW) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionSW) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeSW & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -306,7 +306,7 @@ func (ia InstructionLW) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionLW) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionLW) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeLW & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -346,7 +346,7 @@ func (ia InstructionBEQ) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionBEQ) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionBEQ) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeBEQ & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -386,7 +386,7 @@ func (ia InstructionJALR) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionJALR) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionJALR) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeJALR & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -421,7 +421,7 @@ func (ia InstructionLLI) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionLLI) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionLLI) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	var out uint16
 	out |= (OpcodeADDI & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
@@ -459,7 +459,7 @@ func (ia InstructionDATA) Line() int {
 }
 
 // Encode implements Instruction.Encode
-func (ia InstructionDATA) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionDATA) Encode(labels map[string]int64, pc uint16) (uint16, error) {
 	return ia.Value, nil
 }
 

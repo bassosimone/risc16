@@ -11,7 +11,10 @@
 // would be rejected by the original parser written in C.
 package asm
 
-import "io"
+import (
+	"io"
+	"math"
+)
 
 // InstructionOrError contains either an assembled instruction
 // or an error that occurred during the assemblation.
@@ -47,8 +50,12 @@ func AssemblerAsync(r io.Reader, out chan<- InstructionOrError) {
 		instructions = append(instructions, instr)
 		idx++
 	}
-	for _, instr := range instructions {
-		encoded, err := instr.Encode(labels)
+	for pc, instr := range instructions {
+		if pc > math.MaxUint16 {
+			out <- InstructionOrError{Error: ErrTooManyInstructions}
+			return
+		}
+		encoded, err := instr.Encode(labels, uint16(pc))
 		if err != nil {
 			out <- InstructionOrError{Error: err}
 			continue

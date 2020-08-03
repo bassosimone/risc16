@@ -37,7 +37,8 @@ var (
 	ErrExpectedEOL          = errors.New("asm: expected end of line")
 	ErrInvalidRegisterName  = errors.New("asm: invalid register name")
 	ErrOutOrRange           = errors.New("asm: immediate value out of range")
-	ErrCannotEncode         = errors.New("ams: can't encode instruction")
+	ErrCannotEncode         = errors.New("asm: can't encode instruction")
+	ErrTooManyInstructions  = errors.New("asm: too many instructions")
 )
 
 // StartParsing starts parsing in a backend goroutine.

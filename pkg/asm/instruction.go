@@ -339,7 +339,7 @@ func (ia InstructionJALR) Encode(labels map[string]int64) (uint16, error) {
 
 var _ Instruction = InstructionJALR{}
 
-// InstructionLLI is the LLI instruction
+// InstructionLLI is the LLI pseudo-instruction
 type InstructionLLI struct {
 	MaybeLabel *string
 	RA         uint16
@@ -371,6 +371,29 @@ func (ia InstructionLLI) Encode(labels map[string]int64) (uint16, error) {
 }
 
 var _ Instruction = InstructionLLI{}
+
+// InstructionDATA is the .SPACE or .FILL pseudo-instruction
+type InstructionDATA struct {
+	MaybeLabel *string
+	Value      uint16
+}
+
+// Err implements Instruction.Err
+func (ia InstructionDATA) Err() error {
+	return nil
+}
+
+// Label implements Instruction.Label
+func (ia InstructionDATA) Label() *string {
+	return ia.MaybeLabel
+}
+
+// Encode implements Instruction.Encode
+func (ia InstructionDATA) Encode(labels map[string]int64) (uint16, error) {
+	return ia.Value, nil
+}
+
+var _ Instruction = InstructionDATA{}
 
 // ResolveImmediate resolves the value of an immediate
 func ResolveImmediate(labels map[string]int64, name string, bits int) (uint16, error) {

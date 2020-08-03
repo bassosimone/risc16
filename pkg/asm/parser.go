@@ -24,8 +24,8 @@ var InstructionParsers = map[string]ParseSpecificInstruction{
 	"halt":   ParseHALT,
 	"lli":    ParseLLI,
 	"movi":   ParseMOVI,
-	".fill":  nil,
-	".space": nil,
+	".fill":  ParseFILL,
+	".space": ParseSPACE,
 }
 
 // The following errors may occur during parsing.
@@ -358,6 +358,45 @@ func ParseMOVI(in <-chan LexerToken, label *string) []Instruction {
 			Imm: imm,
 		},
 	}
+}
+
+// ParseFILL parses the .FILL pseudo-instruction
+func ParseFILL(in <-chan LexerToken, label *string) []Instruction {
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	value, err := strconv.ParseInt(imm, 0, 16)
+	if err != nil {
+		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
+	}
+	return []Instruction{InstructionDATA{
+		MaybeLabel: label,
+		Value:      uint16(value),
+	}}
+}
+
+// ParseSPACE parses the .SPACE pseudo-instruction
+func ParseSPACE(in <-chan LexerToken, label *string) (out []Instruction) {
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	count, err := strconv.ParseUint(imm, 0, 16)
+	if err != nil || count <= 0 {
+		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
+	}
+	for i := uint64(0); i < count; i++ {
+		out = append(out, InstructionDATA{MaybeLabel: label})
+		label = nil
+	}
+	return
 }
 
 // ParseRegisterOrComma parses a register ignoring a comma

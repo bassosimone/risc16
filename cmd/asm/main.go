@@ -12,6 +12,7 @@ import (
 func main() {
 	log.SetFlags(0)
 	filename := flag.String("f", "", "file to process")
+	debug := flag.Bool("d", false, "debug mode")
 	flag.Parse()
 	if *filename == "" {
 		log.Fatal("usage: asm -f <assmebly-code-file>")
@@ -25,6 +26,10 @@ func main() {
 		if instr.Error != nil {
 			log.Fatal(instr.Error)
 		}
-		fmt.Printf("%04x\n", instr.Instruction)
+		fmt.Printf("%04x", instr.Instruction)
+		if *debug {
+			fmt.Printf("  # %d", instr.Lineno)
+		}
+		fmt.Println("")
 	}
 }

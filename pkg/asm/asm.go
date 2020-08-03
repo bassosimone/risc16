@@ -40,24 +40,24 @@ func AssemblerAsync(r io.Reader, out chan<- InstructionOrError) {
 	labels := make(map[string]int64)
 	var instructions []Instruction
 	for instr := range StartParsing(StartLexing(r)) {
+		if instr.Err() != nil {
+			out <- InstructionOrError{Error: instr.Err(), Lineno: instr.Line()}
+			return
+		}
 		if instr.Label() != nil {
 			labels[*instr.Label()] = idx
-		}
-		if instr.Err() != nil {
-			out <- InstructionOrError{Error: instr.Err()}
-			return
 		}
 		instructions = append(instructions, instr)
 		idx++
 	}
 	for pc, instr := range instructions {
 		if pc > math.MaxUint16 {
-			out <- InstructionOrError{Error: ErrTooManyInstructions}
+			out <- InstructionOrError{Error: ErrTooManyInstructions, Lineno: instr.Line()}
 			return
 		}
 		encoded, err := instr.Encode(labels, uint16(pc))
 		if err != nil {
-			out <- InstructionOrError{Error: err}
+			out <- InstructionOrError{Error: err, Lineno: instr.Line()}
 			continue
 		}
 		out <- InstructionOrError{Instruction: encoded, Lineno: instr.Line()}

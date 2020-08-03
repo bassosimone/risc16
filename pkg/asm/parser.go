@@ -29,7 +29,7 @@ var InstructionParsers = map[string]ParseSpecificInstruction{
 	".space": ParseSPACE,
 }
 
-// The following errors may occur during parsing.
+// The following errors may occur when assembling.
 var (
 	ErrExpectedNameOrNumber = errors.New("asm: expected name or number")
 	ErrUnknownInstruction   = errors.New("asm: unknown instruction")
@@ -59,7 +59,7 @@ func ParseAsync(in <-chan LexerToken, out chan<- Instruction) {
 	for {
 		instr := ParseSingleInstruction(in)
 		if instr == nil {
-			return
+			return // this is end of lexing
 		}
 		for _, i := range instr {
 			out <- i

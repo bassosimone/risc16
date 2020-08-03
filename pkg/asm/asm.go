@@ -18,6 +18,7 @@ import "io"
 type InstructionOrError struct {
 	Instruction uint16
 	Error       error
+	Lineno      int
 }
 
 // StartAssembler starts the assembler in a background goroutine an
@@ -52,6 +53,6 @@ func AssemblerAsync(r io.Reader, out chan<- InstructionOrError) {
 			out <- InstructionOrError{Error: err}
 			continue
 		}
-		out <- InstructionOrError{Instruction: encoded}
+		out <- InstructionOrError{Instruction: encoded, Lineno: instr.Line()}
 	}
 }

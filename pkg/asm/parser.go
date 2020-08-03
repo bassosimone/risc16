@@ -8,7 +8,8 @@ import (
 )
 
 // ParseSpecificInstruction is the function parsing a specific instruction.
-type ParseSpecificInstruction func(in <-chan LexerToken, label *string) []Instruction
+type ParseSpecificInstruction func(
+	in <-chan LexerToken, label *string, lineno int) []Instruction
 
 // InstructionParsers maps an instruction to its parser.
 var InstructionParsers = map[string]ParseSpecificInstruction{
@@ -98,11 +99,11 @@ again:
 		return NewParseError(fmt.Errorf("%w while processing instruction name on line %d",
 			ErrUnknownInstruction, token.Lineno))
 	}
-	return parser(in, label)
+	return parser(in, label, token.Lineno)
 }
 
 // ParseADD parses the ADD instruction
-func ParseADD(in <-chan LexerToken, label *string) []Instruction {
+func ParseADD(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -119,6 +120,7 @@ func ParseADD(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionADD{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -127,7 +129,7 @@ func ParseADD(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseADDI parses the ADDI instruction
-func ParseADDI(in <-chan LexerToken, label *string) []Instruction {
+func ParseADDI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -144,6 +146,7 @@ func ParseADDI(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionADDI{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -152,7 +155,7 @@ func ParseADDI(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseNAND parses the NAND instruction
-func ParseNAND(in <-chan LexerToken, label *string) []Instruction {
+func ParseNAND(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -169,6 +172,7 @@ func ParseNAND(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionNAND{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -177,7 +181,7 @@ func ParseNAND(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseLUI parses the LUI instruction
-func ParseLUI(in <-chan LexerToken, label *string) []Instruction {
+func ParseLUI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -190,6 +194,7 @@ func ParseLUI(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionLUI{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		Imm:        imm,
@@ -197,7 +202,7 @@ func ParseLUI(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseSW parses the SW instruction
-func ParseSW(in <-chan LexerToken, label *string) []Instruction {
+func ParseSW(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -214,6 +219,7 @@ func ParseSW(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionSW{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -222,7 +228,7 @@ func ParseSW(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseLW parses the LW instruction
-func ParseLW(in <-chan LexerToken, label *string) []Instruction {
+func ParseLW(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -239,6 +245,7 @@ func ParseLW(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionLW{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -247,7 +254,7 @@ func ParseLW(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseBEQ parses the BEQ instruction
-func ParseBEQ(in <-chan LexerToken, label *string) []Instruction {
+func ParseBEQ(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -264,6 +271,7 @@ func ParseBEQ(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionBEQ{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -272,7 +280,7 @@ func ParseBEQ(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseJALR parses the JALR instruction
-func ParseJALR(in <-chan LexerToken, label *string) []Instruction {
+func ParseJALR(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -285,6 +293,7 @@ func ParseJALR(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(err)
 	}
 	return []Instruction{InstructionJALR{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		RB:         rb,
@@ -292,28 +301,29 @@ func ParseJALR(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseNOP parses the NOP pseudo-instruction
-func ParseNOP(in <-chan LexerToken, label *string) []Instruction {
+func ParseNOP(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	if err := ParseEOL(in); err != nil {
 		return NewParseError(err)
 	}
 	// NOP is mapped to ADD r0 r0 r0
-	return []Instruction{InstructionADD{MaybeLabel: label}}
+	return []Instruction{InstructionADD{Lineno: lineno, MaybeLabel: label}}
 }
 
 // ParseHALT parses the HALT pseudo-instruction
-func ParseHALT(in <-chan LexerToken, label *string) []Instruction {
+func ParseHALT(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	if err := ParseEOL(in); err != nil {
 		return NewParseError(err)
 	}
 	// HALT is mapped to JALR r0 r0 <special-value>.
 	return []Instruction{InstructionJALR{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		Imm:        ExceptionTypeEXCEPTION | ExceptionValueHALT,
 	}}
 }
 
 // ParseLLI parses the LLI pseudo-instruction
-func ParseLLI(in <-chan LexerToken, label *string) []Instruction {
+func ParseLLI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -327,6 +337,7 @@ func ParseLLI(in <-chan LexerToken, label *string) []Instruction {
 	}
 	// LLI translates to ADDI RA RA (Imm & 0x3f)
 	return []Instruction{InstructionLLI{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		RA:         ra,
 		Imm:        imm,
@@ -334,7 +345,7 @@ func ParseLLI(in <-chan LexerToken, label *string) []Instruction {
 }
 
 // ParseMOVI parses the MOVI pseudo-instruction
-func ParseMOVI(in <-chan LexerToken, label *string) []Instruction {
+func ParseMOVI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -349,19 +360,21 @@ func ParseMOVI(in <-chan LexerToken, label *string) []Instruction {
 	// MOVI translates to LUI and LLI
 	return []Instruction{
 		InstructionLUI{
+			Lineno:     lineno,
 			MaybeLabel: label,
 			RA:         ra,
 			Imm:        imm,
 		},
 		InstructionLLI{
-			RA:  ra,
-			Imm: imm,
+			Lineno: lineno,
+			RA:     ra,
+			Imm:    imm,
 		},
 	}
 }
 
 // ParseFILL parses the .FILL pseudo-instruction
-func ParseFILL(in <-chan LexerToken, label *string) []Instruction {
+func ParseFILL(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	imm, err := ParseImmediateOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -374,13 +387,14 @@ func ParseFILL(in <-chan LexerToken, label *string) []Instruction {
 		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
 	}
 	return []Instruction{InstructionDATA{
+		Lineno:     lineno,
 		MaybeLabel: label,
 		Value:      uint16(value),
 	}}
 }
 
 // ParseSPACE parses the .SPACE pseudo-instruction
-func ParseSPACE(in <-chan LexerToken, label *string) (out []Instruction) {
+func ParseSPACE(in <-chan LexerToken, label *string, lineno int) (out []Instruction) {
 	imm, err := ParseImmediateOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -393,7 +407,7 @@ func ParseSPACE(in <-chan LexerToken, label *string) (out []Instruction) {
 		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
 	}
 	for i := uint64(0); i < count; i++ {
-		out = append(out, InstructionDATA{MaybeLabel: label})
+		out = append(out, InstructionDATA{Lineno: lineno, MaybeLabel: label})
 		label = nil
 	}
 	return

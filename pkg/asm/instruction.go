@@ -48,6 +48,9 @@ type Instruction interface {
 	// function returns nil, then there is no label.
 	Label() *string
 
+	// Line returns the line where the instruction appears in the input file.
+	Line() int
+
 	// Encode encodes the instruction. The table passed in input maps each
 	// label to the corresponding offset in memory.
 	Encode(labels map[string]int64) (uint16, error)
@@ -55,21 +58,27 @@ type Instruction interface {
 
 // InstructionErr is an error
 type InstructionErr struct {
-	Error error
+	Error  error
+	Lineno int
 }
 
 // Err implements Instruction.Err
-func (ie InstructionErr) Err() error {
-	return ie.Error
+func (ia InstructionErr) Err() error {
+	return ia.Error
 }
 
 // Label implements Instruction.Label
-func (ie InstructionErr) Label() *string {
+func (ia InstructionErr) Label() *string {
 	return nil
 }
 
+// Line implements Instruction.Line
+func (ia InstructionErr) Line() int {
+	return ia.Lineno
+}
+
 // Encode implements Instruction.Encode
-func (ie InstructionErr) Encode(labels map[string]int64) (uint16, error) {
+func (ia InstructionErr) Encode(labels map[string]int64) (uint16, error) {
 	return 0, fmt.Errorf("%w because this is an error", ErrCannotEncode)
 }
 
@@ -83,6 +92,7 @@ var _ Instruction = InstructionErr{}
 
 // InstructionADD is the ADD instruction
 type InstructionADD struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -99,6 +109,11 @@ func (ia InstructionADD) Label() *string {
 	return ia.MaybeLabel
 }
 
+// Line implements Instruction.Line
+func (ia InstructionADD) Line() int {
+	return ia.Lineno
+}
+
 // Encode implements Instruction.Encode
 func (ia InstructionADD) Encode(labels map[string]int64) (uint16, error) {
 	var out uint16
@@ -113,6 +128,7 @@ var _ Instruction = InstructionADD{}
 
 // InstructionADDI is the ADDI instruction
 type InstructionADDI struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -127,6 +143,11 @@ func (ia InstructionADDI) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionADDI) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionADDI) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -147,6 +168,7 @@ var _ Instruction = InstructionADDI{}
 
 // InstructionNAND is the NAND instruction
 type InstructionNAND struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -163,6 +185,11 @@ func (ia InstructionNAND) Label() *string {
 	return ia.MaybeLabel
 }
 
+// Line implements Instruction.Line
+func (ia InstructionNAND) Line() int {
+	return ia.Lineno
+}
+
 // Encode implements Instruction.Encode
 func (ia InstructionNAND) Encode(labels map[string]int64) (uint16, error) {
 	var out uint16
@@ -177,6 +204,7 @@ var _ Instruction = InstructionNAND{}
 
 // InstructionLUI is the LUI instruction
 type InstructionLUI struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	Imm        string
@@ -190,6 +218,11 @@ func (ia InstructionLUI) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionLUI) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionLUI) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -209,6 +242,7 @@ var _ Instruction = InstructionLUI{}
 
 // InstructionSW is the SW instruction
 type InstructionSW struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -223,6 +257,11 @@ func (ia InstructionSW) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionSW) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionSW) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -243,6 +282,7 @@ var _ Instruction = InstructionSW{}
 
 // InstructionLW is the LW instruction
 type InstructionLW struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -257,6 +297,11 @@ func (ia InstructionLW) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionLW) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionLW) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -277,6 +322,7 @@ var _ Instruction = InstructionLW{}
 
 // InstructionBEQ is the BEQ instruction
 type InstructionBEQ struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -291,6 +337,11 @@ func (ia InstructionBEQ) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionBEQ) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionBEQ) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -311,6 +362,7 @@ var _ Instruction = InstructionBEQ{}
 
 // InstructionJALR is the JALR instruction
 type InstructionJALR struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	RB         uint16
@@ -327,6 +379,11 @@ func (ia InstructionJALR) Label() *string {
 	return ia.MaybeLabel
 }
 
+// Line implements Instruction.Line
+func (ia InstructionJALR) Line() int {
+	return ia.Lineno
+}
+
 // Encode implements Instruction.Encode
 func (ia InstructionJALR) Encode(labels map[string]int64) (uint16, error) {
 	var out uint16
@@ -341,6 +398,7 @@ var _ Instruction = InstructionJALR{}
 
 // InstructionLLI is the LLI pseudo-instruction
 type InstructionLLI struct {
+	Lineno     int
 	MaybeLabel *string
 	RA         uint16
 	Imm        string
@@ -354,6 +412,11 @@ func (ia InstructionLLI) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionLLI) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionLLI) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode
@@ -374,6 +437,7 @@ var _ Instruction = InstructionLLI{}
 
 // InstructionDATA is the .SPACE or .FILL pseudo-instruction
 type InstructionDATA struct {
+	Lineno     int
 	MaybeLabel *string
 	Value      uint16
 }
@@ -386,6 +450,11 @@ func (ia InstructionDATA) Err() error {
 // Label implements Instruction.Label
 func (ia InstructionDATA) Label() *string {
 	return ia.MaybeLabel
+}
+
+// Line implements Instruction.Line
+func (ia InstructionDATA) Line() int {
+	return ia.Lineno
 }
 
 // Encode implements Instruction.Encode

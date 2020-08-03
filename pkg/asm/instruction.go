@@ -161,7 +161,7 @@ func (ia InstructionADDI) Encode(labels map[string]int64, pc uint16) (uint16, er
 	if err != nil {
 		return 0, err
 	}
-	out |= imm
+	out |= imm & 0b111_1111
 	return out, nil
 }
 
@@ -275,7 +275,7 @@ func (ia InstructionSW) Encode(labels map[string]int64, pc uint16) (uint16, erro
 	if err != nil {
 		return 0, err
 	}
-	out |= imm
+	out |= imm & 0b111_1111
 	return out, nil
 }
 
@@ -315,7 +315,7 @@ func (ia InstructionLW) Encode(labels map[string]int64, pc uint16) (uint16, erro
 	if err != nil {
 		return 0, err
 	}
-	out |= imm
+	out |= imm & 0b111_1111
 	return out, nil
 }
 
@@ -355,7 +355,7 @@ func (ia InstructionBEQ) Encode(labels map[string]int64, pc uint16) (uint16, err
 	if err != nil {
 		return 0, err
 	}
-	out |= imm
+	out |= imm & 0b111_1111
 	return out, nil
 }
 

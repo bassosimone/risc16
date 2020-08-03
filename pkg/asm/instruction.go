@@ -2,7 +2,6 @@ package asm
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 )
 
@@ -490,11 +489,8 @@ func CastToUint16(value int64, bits, lineno int) (uint16, error) {
 	if bits < 1 || bits > 16 {
 		panic("bits value out of range")
 	}
-	// TODO(bassosimone): this should become fatal once we don't need
-	// anymore the original implementation of the assembler.
 	if value < -(1<<(bits-1)) || value > ((1<<(bits-1))-1) {
-		log.Printf(
-			"warning: value out of %d-bit range on line %d", bits, lineno)
+		return 0, fmt.Errorf("%w for %d-bit range on line %d", ErrOutOfRange, bits, lineno)
 	}
 	return uint16(value), nil
 }

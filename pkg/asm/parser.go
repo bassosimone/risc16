@@ -8,22 +8,22 @@ import (
 )
 
 // ParseSpecificInstruction is the function parsing a specific instruction.
-type ParseSpecificInstruction func(in <-chan LexerToken, label *string) ParsedInstruction
+type ParseSpecificInstruction func(in <-chan LexerToken, label *string) []Instruction
 
 // InstructionParsers maps an instruction to its parser.
 var InstructionParsers = map[string]ParseSpecificInstruction{
 	"add":    ParseADD,
 	"addi":   ParseADDI,
-	"nand":   nil,
-	"lui":    nil,
-	"sw":     nil,
-	"lw":     nil,
-	"beq":    nil,
-	"jalr":   nil,
-	"nop":    nil,
-	"halt":   nil,
-	"lli":    nil,
-	"movi":   nil,
+	"nand":   ParseNAND,
+	"lui":    ParseLUI,
+	"sw":     ParseSW,
+	"lw":     ParseLW,
+	"beq":    ParseBEQ,
+	"jalr":   ParseJALR,
+	"nop":    ParseNOP,
+	"halt":   ParseHALT,
+	"lli":    ParseLLI,
+	"movi":   ParseMOVI,
 	".fill":  nil,
 	".space": nil,
 }
@@ -39,121 +39,15 @@ var (
 	ErrCannotEncode         = errors.New("ams: can't encode instruction")
 )
 
-// The following constants define RiSC-16 opcodes.
-const (
-	OpcodeADD = iota
-	OpcodeADDI
-	OpcodeNAND
-	OpcodeLUI
-	OpcodeSW
-	OpcodeLW
-	OpcodeBEQ
-	OpcodeJALR
-)
-
-// ParsedInstruction is a parsed instruction.
-type ParsedInstruction interface {
-	// Err returns the error occurred processing the instruction. If this
-	// function returns nil, then the instruction is valid.
-	Err() error
-
-	// Label returns the label associated with the instruction. If this
-	// function returns nil, then there is no label.
-	Label() *string
-
-	// Encode encodes the instruction. The table passed in input maps each
-	// label to the corresponding offset in memory.
-	Encode(labels map[string]int64) (uint16, error)
-}
-
 // StartParsing starts parsing in a backend goroutine.
-func StartParsing(in <-chan LexerToken) <-chan ParsedInstruction {
-	out := make(chan ParsedInstruction)
+func StartParsing(in <-chan LexerToken) <-chan Instruction {
+	out := make(chan Instruction)
 	go ParseAsync(in, out)
 	return out
 }
 
-// ParsedGenericInstruction is a generic parsed instruction.
-type ParsedGenericInstruction struct {
-	Error      error
-	MaybeLabel *string
-	Opcode     uint16
-	RA         uint16
-}
-
-// Err implements ParsedInstruction.Err.
-func (pi *ParsedGenericInstruction) Err() error {
-	return pi.Error
-}
-
-// Label implements ParsedInstruction.Label.
-func (pi *ParsedGenericInstruction) Label() *string {
-	return pi.MaybeLabel
-}
-
-// Encode implements ParsedInstruction.Encode.
-func (pi *ParsedGenericInstruction) Encode(labels map[string]int64) (uint16, error) {
-	return 0, fmt.Errorf("%w because this is not a specific instruction", ErrCannotEncode)
-}
-
-// EncodeCommon encodes the Opcode and RA.
-func (pi *ParsedGenericInstruction) EncodeCommon() (out uint16) {
-	out |= (pi.Opcode & 0b111) << 13
-	out |= (pi.RA & 0b111) << 10
-	return
-}
-
-// NewParseError constructs a new parsed instruction
-// that actually wraps a parsing error.
-func NewParseError(err error) ParsedInstruction {
-	return &ParsedGenericInstruction{Error: err}
-}
-
-// ParsedInstructionRRR is a parsed RRR instruction.
-type ParsedInstructionRRR struct {
-	ParsedGenericInstruction
-	RB uint16
-	RC uint16
-}
-
-// Encode implements ParsedInstruction.Encode
-func (pi *ParsedInstructionRRR) Encode(labels map[string]int64) (out uint16, err error) {
-	out |= pi.ParsedGenericInstruction.EncodeCommon()
-	out |= (pi.RB & 0b111) << 7
-	out |= pi.RC & 0b111
-	return
-}
-
-// ParsedInstructionRRI is a parsed RRI instruction.
-type ParsedInstructionRRI struct {
-	ParsedGenericInstruction
-	RB   uint16
-	Imm7 string
-}
-
-// Encode implements ParsedInstruction.Encode
-func (pi *ParsedInstructionRRI) Encode(labels map[string]int64) (uint16, error) {
-	var out uint16
-	out |= pi.ParsedGenericInstruction.EncodeCommon()
-	out |= (pi.RB & 0b111) << 7
-	n, err := strconv.ParseInt(pi.Imm7, 0, 64)
-	if err != nil {
-		var found bool
-		n, found = labels[pi.Imm7]
-		if !found {
-			return 0, fmt.Errorf("%w because label '%s' is missing",
-				ErrCannotEncode, pi.Imm7)
-		}
-	}
-	if n < -64 || n > 63 {
-		return 0, fmt.Errorf("%w for immediate '%s'", ErrOutOrRange, pi.Imm7)
-	}
-	out |= uint16(n & 0b111_1111)
-	return out, nil
-}
-
 // ParseAsync is the async instructions parser.
-func ParseAsync(in <-chan LexerToken, out chan<- ParsedInstruction) {
+func ParseAsync(in <-chan LexerToken, out chan<- Instruction) {
 	defer func() {
 		for range in {
 			// drain channel (for robustness)
@@ -165,15 +59,17 @@ func ParseAsync(in <-chan LexerToken, out chan<- ParsedInstruction) {
 		if instr == nil {
 			return
 		}
-		out <- instr
-		if instr.Err() != nil {
-			return
+		for _, i := range instr {
+			out <- i
+			if i.Err() != nil {
+				return
+			}
 		}
 	}
 }
 
 // ParseSingleInstruction parses an instruction.
-func ParseSingleInstruction(in <-chan LexerToken) ParsedInstruction {
+func ParseSingleInstruction(in <-chan LexerToken) []Instruction {
 again:
 	// 1. parse optional label
 	var label *string
@@ -206,7 +102,7 @@ again:
 }
 
 // ParseADD parses the ADD instruction
-func ParseADD(in <-chan LexerToken, label *string) ParsedInstruction {
+func ParseADD(in <-chan LexerToken, label *string) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -222,19 +118,16 @@ func ParseADD(in <-chan LexerToken, label *string) ParsedInstruction {
 	if err := ParseEOL(in); err != nil {
 		return NewParseError(err)
 	}
-	return &ParsedInstructionRRR{
-		ParsedGenericInstruction: ParsedGenericInstruction{
-			MaybeLabel: label,
-			Opcode:     OpcodeADD,
-			RA:         ra,
-		},
-		RB: rb,
-		RC: rc,
-	}
+	return []Instruction{InstructionADD{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		RC:         rc,
+	}}
 }
 
 // ParseADDI parses the ADDI instruction
-func ParseADDI(in <-chan LexerToken, label *string) ParsedInstruction {
+func ParseADDI(in <-chan LexerToken, label *string) []Instruction {
 	ra, err := ParseRegisterOrComma(in)
 	if err != nil {
 		return NewParseError(err)
@@ -243,21 +136,227 @@ func ParseADDI(in <-chan LexerToken, label *string) ParsedInstruction {
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm7, err := ParseImmediateOrComma(in)
+	imm, err := ParseImmediateOrComma(in)
 	if err != nil {
 		return NewParseError(err)
 	}
 	if err := ParseEOL(in); err != nil {
 		return NewParseError(err)
 	}
-	return &ParsedInstructionRRI{
-		ParsedGenericInstruction: ParsedGenericInstruction{
+	return []Instruction{InstructionADDI{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		Imm:        imm,
+	}}
+}
+
+// ParseNAND parses the NAND instruction
+func ParseNAND(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rb, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rc, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionNAND{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		RC:         rc,
+	}}
+}
+
+// ParseLUI parses the LUI instruction
+func ParseLUI(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionLUI{
+		MaybeLabel: label,
+		RA:         ra,
+		Imm:        imm,
+	}}
+}
+
+// ParseSW parses the SW instruction
+func ParseSW(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rb, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionSW{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		Imm:        imm,
+	}}
+}
+
+// ParseLW parses the LW instruction
+func ParseLW(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rb, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionLW{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		Imm:        imm,
+	}}
+}
+
+// ParseBEQ parses the BEQ instruction
+func ParseBEQ(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rb, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionBEQ{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+		Imm:        imm,
+	}}
+}
+
+// ParseJALR parses the JALR instruction
+func ParseJALR(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	rb, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	return []Instruction{InstructionJALR{
+		MaybeLabel: label,
+		RA:         ra,
+		RB:         rb,
+	}}
+}
+
+// ParseNOP parses the NOP pseudo-instruction
+func ParseNOP(in <-chan LexerToken, label *string) []Instruction {
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	// NOP is mapped to ADD r0 r0 r0
+	return []Instruction{InstructionADD{MaybeLabel: label}}
+}
+
+// ParseHALT parses the HALT pseudo-instruction
+func ParseHALT(in <-chan LexerToken, label *string) []Instruction {
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	// HALT is mapped to JALR r0 r0 <special-value>.
+	return []Instruction{InstructionJALR{
+		MaybeLabel: label,
+		Imm:        ExceptionTypeEXCEPTION | ExceptionValueHALT,
+	}}
+}
+
+// ParseLLI parses the LLI pseudo-instruction
+func ParseLLI(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	// LLI translates to ADDI RA RA (Imm & 0x3f)
+	return []Instruction{InstructionLLI{
+		MaybeLabel: label,
+		RA:         ra,
+		Imm:        imm,
+	}}
+}
+
+// ParseMOVI parses the MOVI pseudo-instruction
+func ParseMOVI(in <-chan LexerToken, label *string) []Instruction {
+	ra, err := ParseRegisterOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	imm, err := ParseImmediateOrComma(in)
+	if err != nil {
+		return NewParseError(err)
+	}
+	if err := ParseEOL(in); err != nil {
+		return NewParseError(err)
+	}
+	// MOVI translates to LUI and LLI
+	return []Instruction{
+		InstructionLUI{
 			MaybeLabel: label,
-			Opcode:     OpcodeADDI,
 			RA:         ra,
+			Imm:        imm,
 		},
-		RB:   rb,
-		Imm7: imm7,
+		InstructionLLI{
+			RA:  ra,
+			Imm: imm,
+		},
 	}
 }
 

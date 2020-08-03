@@ -1,5 +1,7 @@
 // Package asm contains the RiSC-16 assembler.
 //
+// See https://user.eng.umd.edu/~blj/RiSC/.
+//
 // Extentions
 //
 // This assembler features the following extensions:
@@ -32,7 +34,7 @@ func AssemblerAsync(r io.Reader, out chan<- InstructionOrError) {
 	defer close(out)
 	var idx int64
 	labels := make(map[string]int64)
-	var instructions []ParsedInstruction
+	var instructions []Instruction
 	for instr := range StartParsing(StartLexing(r)) {
 		if instr.Label() != nil {
 			labels[*instr.Label()] = idx

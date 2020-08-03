@@ -39,14 +39,14 @@ func AssemblerAsync(r io.Reader, out chan<- InstructionOrError) {
 		if instr.Label() != nil {
 			labels[*instr.Label()] = idx
 		}
+		if instr.Err() != nil {
+			out <- InstructionOrError{Error: instr.Err()}
+			return
+		}
 		instructions = append(instructions, instr)
 		idx++
 	}
 	for _, instr := range instructions {
-		if err := instr.Err(); err != nil {
-			out <- InstructionOrError{Error: err}
-			continue
-		}
 		encoded, err := instr.Encode(labels)
 		if err != nil {
 			out <- InstructionOrError{Error: err}

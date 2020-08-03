@@ -105,15 +105,15 @@ again:
 
 // ParseADD parses the ADD instruction
 func ParseADD(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rc, err := ParseRegisterOrComma(in)
+	rc, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -131,15 +131,15 @@ func ParseADD(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseADDI parses the ADDI instruction
 func ParseADDI(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -157,15 +157,15 @@ func ParseADDI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseNAND parses the NAND instruction
 func ParseNAND(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rc, err := ParseRegisterOrComma(in)
+	rc, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -183,11 +183,11 @@ func ParseNAND(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseLUI parses the LUI instruction
 func ParseLUI(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -204,15 +204,15 @@ func ParseLUI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseSW parses the SW instruction
 func ParseSW(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -230,15 +230,15 @@ func ParseSW(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseLW parses the LW instruction
 func ParseLW(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -256,15 +256,15 @@ func ParseLW(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseBEQ parses the BEQ instruction
 func ParseBEQ(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -282,11 +282,11 @@ func ParseBEQ(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseJALR parses the JALR instruction
 func ParseJALR(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	rb, err := ParseRegisterOrComma(in)
+	rb, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -325,11 +325,11 @@ func ParseHALT(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseLLI parses the LLI pseudo-instruction
 func ParseLLI(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -347,11 +347,11 @@ func ParseLLI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseMOVI parses the MOVI pseudo-instruction
 func ParseMOVI(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	ra, err := ParseRegisterOrComma(in)
+	ra, err := MaybeSkipCommaThenParseRegister(in)
 	if err != nil {
 		return NewParseError(err)
 	}
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -376,7 +376,7 @@ func ParseMOVI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseFILL parses the .FILL pseudo-instruction
 func ParseFILL(in <-chan LexerToken, label *string, lineno int) []Instruction {
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -396,7 +396,7 @@ func ParseFILL(in <-chan LexerToken, label *string, lineno int) []Instruction {
 
 // ParseSPACE parses the .SPACE pseudo-instruction
 func ParseSPACE(in <-chan LexerToken, label *string, lineno int) (out []Instruction) {
-	imm, err := ParseImmediateOrComma(in)
+	imm, err := MaybeSkipCommaThenParseImmediate(in)
 	if err != nil {
 		return NewParseError(err)
 	}
@@ -416,7 +416,7 @@ func ParseSPACE(in <-chan LexerToken, label *string, lineno int) (out []Instruct
 
 // ParseRegisterOrComma parses a register ignoring a comma
 // that may or may not appear before the register.
-func ParseRegisterOrComma(in <-chan LexerToken) (uint16, error) {
+func MaybeSkipCommaThenParseRegister(in <-chan LexerToken) (uint16, error) {
 	token := <-in
 	switch token.Type {
 	case LexerNameOrNumber:
@@ -445,7 +445,7 @@ func ParseRegisterOrComma(in <-chan LexerToken) (uint16, error) {
 
 // ParseImmediateOrComma parses an immediate ignoring a comma
 // that may or may not appear before the register.
-func ParseImmediateOrComma(in <-chan LexerToken) (string, error) {
+func MaybeSkipCommaThenParseImmediate(in <-chan LexerToken) (string, error) {
 	token := <-in
 	switch token.Type {
 	case LexerNameOrNumber:

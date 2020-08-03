@@ -36,7 +36,7 @@ var (
 	ErrExpectedComma        = errors.New("asm: expected comma")
 	ErrExpectedEOL          = errors.New("asm: expected end of line")
 	ErrInvalidRegisterName  = errors.New("asm: invalid register name")
-	ErrOutOrRange           = errors.New("asm: immediate value out of range")
+	ErrOutOfRange           = errors.New("asm: immediate value out of range")
 	ErrCannotEncode         = errors.New("asm: can't encode instruction")
 	ErrTooManyInstructions  = errors.New("asm: too many instructions")
 )
@@ -385,7 +385,7 @@ func ParseFILL(in <-chan LexerToken, label *string, lineno int) []Instruction {
 	}
 	value, err := strconv.ParseInt(imm, 0, 16)
 	if err != nil {
-		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
+		return NewParseError(fmt.Errorf("%w for data", ErrOutOfRange))
 	}
 	return []Instruction{InstructionDATA{
 		Lineno:     lineno,
@@ -405,7 +405,7 @@ func ParseSPACE(in <-chan LexerToken, label *string, lineno int) (out []Instruct
 	}
 	count, err := strconv.ParseUint(imm, 0, 16)
 	if err != nil || count <= 0 {
-		return NewParseError(fmt.Errorf("%w for data", ErrOutOrRange))
+		return NewParseError(fmt.Errorf("%w for data", ErrOutOfRange))
 	}
 	for i := uint64(0); i < count; i++ {
 		out = append(out, InstructionDATA{Lineno: lineno, MaybeLabel: label})

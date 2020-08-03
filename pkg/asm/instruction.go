@@ -351,11 +351,16 @@ func (ia InstructionBEQ) Encode(labels map[string]int64, pc uint16) (uint16, err
 	out |= (OpcodeBEQ & 0b111) << 13
 	out |= (ia.RA & 0b111) << 10
 	out |= (ia.RB & 0b111) << 7
-	imm, err := ResolveImmediate(labels, ia.Imm, 7, ia.Lineno)
+	imm, err := ResolveImmediate(labels, ia.Imm, 16, ia.Lineno)
 	if err != nil {
 		return 0, err
 	}
-	out |= imm & 0b111_1111
+	var target int64 = int64(imm) - int64(pc) - 1
+	offset, err := CastToUint16(target, 7, ia.Lineno)
+	if err != nil {
+		return 0, err
+	}
+	out |= offset & 0b111_1111
 	return out, nil
 }
 
@@ -468,9 +473,6 @@ var _ Instruction = InstructionDATA{}
 // ResolveImmediate resolves the value of an immediate
 func ResolveImmediate(
 	labels map[string]int64, name string, bits, lineno int) (uint16, error) {
-	if bits < 1 || bits > 16 {
-		panic("bits value out of range")
-	}
 	value, err := strconv.ParseInt(name, 0, 64)
 	if err != nil {
 		var found bool
@@ -480,9 +482,19 @@ func ResolveImmediate(
 		}
 		// fallthrough
 	}
+	return CastToUint16(value, bits, lineno)
+}
+
+// CastToUint16 casts the given value to uint16
+func CastToUint16(value int64, bits, lineno int) (uint16, error) {
+	if bits < 1 || bits > 16 {
+		panic("bits value out of range")
+	}
+	// TODO(bassosimone): this should become fatal once we don't need
+	// anymore the original implementation of the assembler.
 	if value < -(1<<(bits-1)) || value > ((1<<(bits-1))-1) {
 		log.Printf(
-			"warning: value out of %d-bit range for '%s' on line %d", bits, name, lineno)
+			"warning: value out of %d-bit range on line %d", bits, lineno)
 	}
 	return uint16(value), nil
 }

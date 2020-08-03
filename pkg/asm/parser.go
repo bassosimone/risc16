@@ -367,9 +367,10 @@ func ParseMOVI(in <-chan LexerToken, label *string, lineno int) []Instruction {
 			Imm:        imm,
 		},
 		InstructionLLI{
-			Lineno: lineno,
-			RA:     ra,
-			Imm:    imm,
+			Lineno:     lineno,
+			MaybeLabel: nil, // no label for second instruction
+			RA:         ra,
+			Imm:        imm,
 		},
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bassosimone/vmlang/pkg/vm"
+	"github.com/bassosimone/risc16/pkg/vm"
 )
 
 func main() {

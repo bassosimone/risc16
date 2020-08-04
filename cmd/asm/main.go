@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bassosimone/vmlang/pkg/asm"
+	"github.com/bassosimone/risc16/pkg/asm"
 )
 
 func main() {

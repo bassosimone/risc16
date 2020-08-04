@@ -1,0 +1,13 @@
+diff --git a/testdata/laplace.s b/testdata/laplace.s
+index ceda2fd..3eee495 100644
+--- a/testdata/laplace.s
++++ b/testdata/laplace.s
+@@ -104,7 +104,7 @@ loop2:  lw	5,4,1		# load GRID[x+1,y]
+ 	beq	2,0,done	# have we done 14 yet?
+ 	beq	0,0,loop2	# if not keep looping
+ 
+-done:	lui	1,32768		# highest bit [and test lui]
++done:	lui	1,-32768	# highest bit [and test lui]
+ 	lw	5,0,max		# load maximum value to watch for
+ 	add	5,5,4		# add to offset
+ 	nand	5,5,1		# mask for top bit [negative]
